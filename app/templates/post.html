@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Post #{{ post.id }} | URFeast{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- 1. Post Header: Poster Info & Question -->
+    <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
+            
+            <!-- Poster Info & Passport Badges -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full {{ post.author.avatar_color if post.author else 'bg-slate-700' }} flex items-center justify-center font-bold text-white text-base">
+                    {{ post.author.name[0] if post.author else 'U' }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-white text-base">{{ post.author.name if post.author else 'Community Member' }}</span>
+                        {% if post.author and post.author.passport %}
+                            <div class="flex flex-wrap gap-1">
+                                <span class="bg-purple-900/60 text-purple-200 px-2 py-0.5 text-xs rounded font-semibold capitalize">{{ post.author.passport.diet_type }}</span>
+                                {% for alg in post.author.passport.allergies %}
+                                    <span class="bg-red-900/80 text-red-200 border border-red-500/40 px-2 py-0.5 text-xs rounded font-bold">⚠️ {{ alg }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-slate-400 mt-0.5">
+                        Posted in {{ post.community.name if post.community else 'General' }} • {{ post.created_at.strftime('%b %d, %Y %H:%M') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dietitian Approval Tag or Status -->
+            <div class="flex items-center gap-2">
+                {% if post.status == 'dietitian_approved' %}
+                <span class="bg-teal-500/20 text-teal-300 border border-teal-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-teal-400"></i> Dietitian Approved Plan
+                </span>
+                {% endif %}
+
+                {% if current_user and current_user.role in ['dietitian', 'admin'] and post.status != 'dietitian_approved' %}
+                <form action="/post/{{ post.id }}/approve" method="POST">
+                    <button type="submit" class="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl border border-teal-400/30 flex items-center gap-1.5 transition-colors shadow-md">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i> Approve Plan
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Question Body -->
+        <h1 class="text-xl font-extrabold text-white leading-snug">
+            "{{ post.question_text }}"
+        </h1>
+
+        <!-- Image Container with Bounding Box Overlay support -->
+        {% if post.image_path %}
+        <div class="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 max-h-[480px] flex items-center justify-center group" id="imageViewer">
+            <img src="/{{ post.image_path }}" id="mainPostImage" alt="Food scan photo" class="max-h-[480px] w-auto object-contain">
+            <div id="bboxOverlay" class="absolute inset-0 pointer-events-none"></div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 2. Gemma's First Answer Card -->
+    {% if post.analysis %}
+    {% set ai = post.analysis %}
+    <div class="glass-card rounded-2xl p-6 border border-purple-500/40 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/30 space-y-5 shadow-xl relative overflow-hidden">
+        
+        <!-- Card Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center font-bold text-white text-xs shadow-md">AI</span>
+                <div>
+                    <h2 class="font-extrabold text-lg text-white tracking-tight flex items-center gap-2">
+                        Gemma 4 Perception & Analysis
+                    </h2>
+                    <span class="text-xs text-purple-300">Checked against {{ post.author.name.split()[0] if post.author else 'Poster' }}'s Diet Passport</span>
+                </div>
+            </div>
+
+            <!-- Verdict Chip -->
+            <div class="flex items-center gap-2">
+                {% if ai.verdict == 'good_fit' %}
+                    <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Good Fit
+                    </span>
+                {% elif ai.verdict == 'okay_with_changes' %}
+                    <span class="bg-amber-500/20 text-amber-300 border border-amber-500/50 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Okay with Swaps
+                    </span>
+                {% elif ai.verdict == 'not_recommended' %}
+                    <span class="bg-red-500/20 text-red-300 border border-red-500/50 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                        <i data-lucide="x-circle" class="w-4 h-4 text-red-400"></i> Not Recommended
+                    </span>
+                {% else %}
+                    <span class="bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold">
+                        Photo Needs Retake
+                    </span>
+                {% endif %}
+
+                <!-- Listen Button (TTS) -->
+                <button onclick="playTTS('{{ ai.summary|escapejs }}', '{{ post.author.language if post.author else 'en' }}', this)" class="bg-purple-900/50 hover:bg-purple-800/60 text-purple-200 border border-purple-500/40 text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors">
+                    <i data-lucide="volume-2" class="w-4 h-4 text-purple-300"></i> Listen
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <p class="text-sm text-slate-200 leading-relaxed font-medium">
+            {{ ai.summary }}
+        </p>
+
+        <!-- Possible Conflicts Alert -->
+        {% if ai.possible_conflicts %}
+        <div class="bg-red-950/40 border border-red-500/30 rounded-xl p-3.5 space-y-2 text-xs">
+            <div class="font-bold text-red-300 flex items-center gap-1.5">
+                <i data-lucide="alert-octagon" class="w-4 h-4 text-red-400"></i> Diet Passport Warning / Potential Conflicts:
+            </div>
+            {% for conf in ai.possible_conflicts %}
+            <div class="text-red-200">
+                • <strong class="capitalize">{{ conf.item }}</strong>: {{ conf.reason }}
+                {% if conf.evidence_quote %}<span class="italic text-slate-400"> (Quote: "{{ conf.evidence_quote }}")</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Evidence-Tagged Observations List -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Evidence-Tagged Observations</h3>
+            <div class="grid grid-cols-1 gap-2">
+                {% for obs in ai.observations %}
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 hover:border-purple-500/30 transition-colors"
+                     {% if obs.box %}onmouseenter="highlightBox({{ obs.box }})" onmouseleave="clearBox()"{% endif %}>
+                    
+                    <div class="flex items-center gap-2">
+                        {% if obs.evidence == 'seen_on_plate' %}
+                            <span class="bg-blue-900/60 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">SEEN ON PLATE</span>
+                        {% elif obs.evidence == 'printed_on_label' %}
+                            <span class="bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">PRINTED ON LABEL</span>
+                        {% else %}
+                            <span class="bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">NOT VISIBLE</span>
+                        {% endif %}
+
+                        <span class="text-slate-200 font-medium">{{ obs.text }}</span>
+                    </div>
+
+                    {% if obs.quote %}
+                    <span class="text-slate-400 italic bg-slate-950 px-2 py-1 rounded border border-slate-800 max-w-xs truncate">
+                        "{{ obs.quote }}"
+                    </span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Label Numbers Panel (if Label product) -->
+        {% if ai.label_data and (ai.label_data.product_name or ai.label_data.per_100g or ai.label_data.per_serving) %}
+        {% set ld = ai.label_data %}
+        <div class="bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="calculator" class="w-4 h-4 text-purple-400"></i> Label Nutrition Breakdown (Deterministic Math)
+                </h3>
+                <span class="text-[11px] text-slate-400 cursor-help" title="Sugar = 4g per tsp; Salt = sodium_mg * 2.5 / 1000">
+                    ℹ️ How we calculated this
+                </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                {% set sugar_serv = ld.per_serving.sugar_g if ld.per_serving else None %}
+                {% set sodium_serv = ld.per_serving.sodium_mg if ld.per_serving else None %}
+
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-400 block text-[10px]">Serving Size</span>
+                    <span class="font-bold text-white text-sm">{{ ld.serving_size_g or 'Not printed' }}g</span>
+                </div>
+
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-400 block text-[10px]">Sugar / Serving</span>
+                    <span class="font-bold text-amber-300 text-sm">
+                        {% if sugar_serv is not none %}
+                            {{ sugar_serv }}g <span class="text-[11px] font-normal text-slate-400">(~{{ (sugar_serv / 4.0)|round(1) }} tsp)</span>
+                        {% else %}
+                            Not on label
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-400 block text-[10px]">Sodium / Serving</span>
+                    <span class="font-bold text-indigo-300 text-sm">
+                        {% if sodium_serv is not none %}
+                            {{ sodium_serv }}mg <span class="text-[11px] font-normal text-slate-400">(~{{ ((sodium_serv * 2.5)/1000.0)|round(2) }}g salt)</span>
+                        {% else %}
+                            Not on label
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-400 block text-[10px]">Pack Total Sugar</span>
+                    <span class="font-bold text-purple-300 text-sm">
+                        {% if sugar_serv is not none and ld.servings_per_pack %}
+                            {{ (sugar_serv * ld.servings_per_pack)|round(1) }}g
+                        {% else %}
+                            Not calculated
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Swap Suggestions -->
+        {% if ai.swap_suggestions %}
+        <div class="space-y-1.5 text-xs">
+            <span class="font-bold text-emerald-400 uppercase tracking-wider">Practical Swaps & Tips:</span>
+            <ul class="list-disc list-inside text-slate-300 space-y-1">
+                {% for swap in ai.swap_suggestions %}
+                <li>{{ swap }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+    <!-- 3. Final Plan Card (Synthesized) -->
+    <div id="finalPlanContainer">
+        {% if post.final_plan %}
+        {% include "partials/final_plan_card.html" %}
+        {% else %}
+        <div class="glass-card rounded-2xl p-5 border border-slate-800 text-center space-y-3">
+            <h3 class="text-sm font-bold text-white">Synthesize Actionable Final Plan</h3>
+            <p class="text-xs text-slate-400">Combines safe dietitian and peer advice into 3-5 simple action bullets.</p>
+            <form hx-post="/post/{{ post.id }}/final_plan" hx-target="#finalPlanContainer" hx-swap="innerHTML">
+                <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl border border-purple-400/30 flex items-center gap-1.5 mx-auto">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Generate Final Plan
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 4. Replies Thread -->
+    <div class="space-y-4">
+        <h2 class="text-lg font-extrabold text-white tracking-tight flex items-center justify-between">
+            <span>Community & Dietitian Replies ({{ post.replies|length }})</span>
+        </h2>
+
+        <div id="repliesList" class="space-y-3">
+            {% for reply in post.replies %}
+            {% include "partials/reply_item.html" %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 5. Reply Box Form (HTMX) -->
+    <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="message-square-plus" class="w-4 h-4 text-purple-400"></i> Add Reply (Audited Live by Gemma 4)
+        </h3>
+        
+        <form hx-post="/post/{{ post.id }}/reply" hx-target="#repliesList" hx-swap="beforeend" hx-indicator="#replySpinner" onsubmit="this.reset()">
+            <textarea name="body" rows="3" required placeholder="Type your food advice or suggestion here..." class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-purple-500"></textarea>
+
+            <div class="flex items-center justify-between mt-3">
+                <span class="text-xs text-slate-400 flex items-center gap-1">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-teal-400"></i> Checked against {{ post.author.name.split()[0] if post.author else 'poster' }}'s Diet Passport
+                </span>
+
+                <div class="flex items-center gap-2">
+                    <div id="replySpinner" class="htmx-indicator flex items-center gap-1.5 text-xs text-purple-300">
+                        <div class="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Auditing safety...</span>
+                    </div>
+
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md transition-colors flex items-center gap-1.5">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i> Post Reply
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function playTTS(text, lang, btn) {
+        if (!text) return;
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+
+        fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${lang}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.audio_url) {
+                    const audio = new Audio(data.audio_url);
+                    audio.play();
+                } else {
+                    alert("Could not generate audio playback.");
+                }
+            })
+            .catch(() => alert("Error generating audio."))
+            .finally(() => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            });
+    }
+
+    function highlightBox(box) {
+        // [ymin, xmin, ymax, xmax] 0-1000
+        const img = document.getElementById('mainPostImage');
+        const overlay = document.getElementById('bboxOverlay');
+        if (!img || !overlay || !box) return;
+
+        const rect = img.getBoundingClientRect();
+        const ymin = (box[0] / 1000) * rect.height;
+        const xmin = (box[1] / 1000) * rect.width;
+        const ymax = (box[2] / 1000) * rect.height;
+        const xmax = (box[3] / 1000) * rect.width;
+
+        overlay.innerHTML = `<div style="position:absolute; top:${ymin}px; left:${xmin}px; width:${xmax - xmin}px; height:${ymax - ymin}px; border:2px solid #a855f7; background:rgba(168,85,247,0.2); border-radius:6px;"></div>`;
+    }
+
+    function clearBox() {
+        const overlay = document.getElementById('bboxOverlay');
+        if (overlay) overlay.innerHTML = '';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Dietitian Triage Queue | URFeast{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="glass-card rounded-2xl p-6 border border-teal-500/30 flex items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-teal-400 text-xs font-bold uppercase tracking-wider">
+                <i data-lucide="stethoscope" class="w-4 h-4"></i> Dietitian Clinical Queue
+            </div>
+            <h1 class="text-2xl font-extrabold text-white">Triaged Clinical Posts</h1>
+            <p class="text-slate-400 text-sm mt-1">
+                Posts triaged by Gemma 4 as requiring dietitian guidance or awaiting verified approval.
+            </p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-teal-300">
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+        </div>
+    </div>
+
+    <!-- Posts Queue List -->
+    <div class="space-y-4">
+        {% if not posts %}
+        <div class="glass-card rounded-2xl p-12 text-center border border-slate-800 space-y-2">
+            <i data-lucide="check-circle-2" class="w-10 h-10 text-teal-400 mx-auto"></i>
+            <h3 class="font-bold text-slate-200">Queue Clear!</h3>
+            <p class="text-xs text-slate-400">All triaged medical/dietitian posts have been answered and approved.</p>
+        </div>
+        {% else %}
+        {% for post in posts %}
+        <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4 hover:border-teal-500/40 transition-all">
+            <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div class="space-y-2 flex-1">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-200 text-sm">{{ post.author.name if post.author else 'Member' }}</span>
+                        {% if post.author and post.author.passport %}
+                            <span class="bg-red-900/60 text-red-200 px-2 py-0.5 text-[10px] rounded font-bold">
+                                {{ post.author.passport.diet_type }} • Allergies: {{ post.author.passport.allergies|join(', ') or 'None' }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <a href="/post/{{ post.id }}" class="block text-base font-bold text-white hover:text-teal-300">
+                        "{{ post.question_text }}"
+                    </a>
+                    
+                    {% if post.author and post.author.passport and post.author.passport.conditions_note %}
+                    <div class="bg-teal-950/50 p-2.5 rounded-lg border border-teal-500/30 text-xs text-teal-200">
+                        <strong>Clinical Note:</strong> {{ post.author.passport.conditions_note }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <a href="/post/{{ post.id }}" class="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors shrink-0">
+                    Review & Answer
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

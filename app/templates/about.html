@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}About Gemma 4 & Safety | URFeast{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header Card -->
+    <div class="glass-card rounded-2xl p-6 border border-purple-500/30 space-y-2">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold border border-purple-500/30">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i> Track: Best Use of Gemma 4
+        </div>
+        <h1 class="text-3xl font-extrabold text-white">How Gemma 4 Powers URFeast</h1>
+        <p class="text-slate-300 text-sm max-w-2xl">
+            URFeast combines open-weight AI vision and reasoning with verified human community expertise and deterministic safety guards.
+        </p>
+    </div>
+
+    <!-- The 7 Roles of Gemma 4 -->
+    <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+        <h2 class="text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
+            <i data-lucide="cpu" class="w-5 h-5 text-purple-400"></i> The 7 Core Roles of Gemma 4 in URFeast
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="font-bold text-purple-300 text-sm block">1. Perception</span>
+                <p class="text-slate-300">Reads meal photos and packaged food ingredient labels into structured observations with evidence tags.</p>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="font-bold text-purple-300 text-sm block">2. Instant First Response</span>
+                <p class="text-slate-300">Provides immediate personalized verdict and breakdown before peer or dietitian replies arrive.</p>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="font-bold text-purple-300 text-sm block">3. Personalization</span>
+                <p class="text-slate-300">Evaluates every meal or label specifically against the user's saved Diet Passport (allergies, diet type, goals).</p>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="font-bold text-purple-300 text-sm block">4. Safety Audit of Human Advice</span>
+                <p class="text-slate-300">Audits peer and dietitian replies synchronously, flagging allergen or diet-style conflicts with explicit warning chips.</p>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="font-bold text-purple-300 text-sm block">5. Triage for Dietitian Review</span>
+                <p class="text-slate-300">Detects medical/clinical keywords and routes complex posts into the clinical queue for verified dietitian review.</p>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                <span class="font-bold text-purple-300 text-sm block">6. Synthesis of Final Plan</span>
+                <p class="text-slate-300">Synthesizes 3-5 concise, actionable steps from the thread while strictly filtering out any unsafe audited suggestions.</p>
+            </div>
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1.5 col-span-full">
+                <span class="font-bold text-purple-300 text-sm block">7. English-Only Output</span>
+                <p class="text-slate-300">Generates all analysis summaries, safety warnings, and synthesized plans in clear English for consistent user experience.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Models Stack -->
+    <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+        <h2 class="text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
+            <i data-lucide="layers" class="w-5 h-5 text-indigo-400"></i> Open Models & Deterministic Architecture
+        </h2>
+
+        <div class="space-y-3 text-xs text-slate-300">
+            <div class="flex items-start gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                <span class="bg-purple-900/60 text-purple-300 px-2 py-1 rounded font-bold shrink-0">Gemma 4</span>
+                <div>
+                    <strong>Core Multimodal & Reasoning Engine:</strong> Configured via <code>GEMMA_MODEL</code> env var via Gemini API, with local fallback via Ollama (<code>GEMMA_BACKEND=ollama</code>).
+                </div>
+            </div>
+            <div class="flex items-start gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                <span class="bg-indigo-900/60 text-indigo-300 px-2 py-1 rounded font-bold shrink-0">faster-whisper</span>
+                <div>
+                    <strong>Speech-to-Text:</strong> Open-source Whisper <code>small</code> model running int8 quantization on CPU with VAD filter for fast voice query transcription.
+                </div>
+            </div>
+            <div class="flex items-start gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                <span class="bg-teal-900/60 text-teal-300 px-2 py-1 rounded font-bold shrink-0">Piper & gTTS</span>
+                <div>
+                    <strong>Text-to-Speech:</strong> Open-source TTS configured for English-only voice output for consistent, user-friendly playback.
+                </div>
+            </div>
+            <div class="flex items-start gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                <span class="bg-emerald-900/60 text-emerald-300 px-2 py-1 rounded font-bold shrink-0">Python Math & Rules</span>
+                <div>
+                    <strong>Deterministic Guards:</strong> Non-AI serving math (sugar teaspoons, sodium to salt conversions, package totals) and synonym allergen matcher.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safety & Limitations -->
+    <div class="glass-card rounded-2xl p-6 border border-amber-500/30 space-y-3">
+        <h2 class="text-base font-extrabold text-amber-300 flex items-center gap-2">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-amber-400"></i> Honest Limitations & Safety Disclaimer
+        </h2>
+        <ul class="list-disc list-inside text-xs text-slate-300 space-y-1.5 leading-relaxed">
+            <li><strong>Not Medical Advice:</strong> URFeast provides educational food information and label breakdown. It does not diagnose, treat, or replace medical care.</li>
+            <li><strong>No Absolute Allergen Guarantees:</strong> Image analysis cannot detect microscopic cross-contamination. Always verify physical package labels and ask manufacturers directly.</li>
+            <li><strong>Deterministic Math Safety:</strong> Nutrition math is computed deterministically by Python to prevent LLM arithmetic hallucinations.</li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

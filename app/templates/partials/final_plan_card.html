@@ -1,0 +1,48 @@
+<div class="glass-card rounded-2xl p-6 border border-emerald-500/40 bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/30 space-y-4 shadow-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-white text-xs shadow-md">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <h2 class="font-extrabold text-lg text-white tracking-tight">Final Synthesized Action Plan</h2>
+                <span class="text-xs text-emerald-300">Audited by Gemma 4 • Strictly excludes unsafe suggestions</span>
+            </div>
+        </div>
+
+        {% set fp = post.final_plan %}
+        {% if fp %}
+        <button onclick="playTTS('{% for b in fp.bullets %}{{ b.text }} {% endfor %}', '{{ fp.language or 'en' }}', this)" class="bg-emerald-900/60 hover:bg-emerald-800/80 text-emerald-200 border border-emerald-500/40 text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors">
+            <i data-lucide="volume-2" class="w-4 h-4 text-emerald-300"></i> Listen Plan
+        </button>
+        {% endif %}
+    </div>
+
+    {% if fp and fp.bullets %}
+    <ul class="space-y-2.5 text-sm text-slate-200">
+        {% for bullet in fp.bullets %}
+        <li class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0"></i>
+            <div>
+                <span>{{ bullet.text }}</span>
+                {% if bullet.source == 'dietitian' %}
+                    <span class="text-[10px] text-teal-400 font-bold ml-1 uppercase bg-teal-950 px-1.5 py-0.5 rounded border border-teal-500/30">Verified Dietitian</span>
+                {% elif bullet.source == 'peer' %}
+                    <span class="text-[10px] text-slate-400 font-bold ml-1 uppercase bg-slate-800 px-1.5 py-0.5 rounded">Peer Suggestion</span>
+                {% else %}
+                    <span class="text-[10px] text-purple-300 font-bold ml-1 uppercase bg-purple-950 px-1.5 py-0.5 rounded border border-purple-500/30">Gemma 4 AI</span>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    {% if fp.check_line %}
+    <div class="text-xs text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center gap-2">
+        <i data-lucide="help-circle" class="w-4 h-4 text-purple-400 shrink-0"></i>
+        <span><strong>What to check:</strong> {{ fp.check_line }}</span>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>

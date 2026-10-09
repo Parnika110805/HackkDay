@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Food / Ask Question | URFeast{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Header Card -->
+    <div class="glass-card rounded-2xl p-6 border border-purple-500/30 flex items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Multimodal AI Analysis
+            </div>
+            <h1 class="text-2xl font-extrabold text-white">Ask Community & Gemma 4</h1>
+            <p class="text-slate-400 text-sm mt-1">
+                Upload a photo of your meal or packaged food label to get an instant personalized breakdown.
+            </p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
+            <i data-lucide="camera" class="w-6 h-6"></i>
+        </div>
+    </div>
+
+    <!-- Active Diet Passport Summary Strip -->
+    <div class="bg-gradient-to-r from-purple-900/30 via-slate-900 to-indigo-900/30 rounded-2xl p-4 border border-purple-500/30 flex items-center justify-between gap-4 text-xs">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full {{ current_user.avatar_color }} flex items-center justify-center font-bold text-white">
+                {{ current_user.name[0] }}
+            </div>
+            <div>
+                <div class="font-bold text-slate-200">Using {{ current_user.name.split()[0] }}'s Diet Passport:</div>
+                <div class="flex flex-wrap gap-1 mt-1">
+                    <span class="bg-purple-900/80 text-purple-200 px-2 py-0.5 rounded font-semibold capitalize">{{ passport.diet_type }}</span>
+                    {% for alg in passport.allergies %}
+                        <span class="bg-red-900/80 text-red-200 border border-red-500/40 px-2 py-0.5 rounded font-bold">⚠️ Allergy: {{ alg }}</span>
+                    {% endfor %}
+                    {% for g in passport.goals %}
+                        <span class="bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded">🎯 {{ g }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <a href="/passport" class="text-purple-300 hover:text-white underline font-semibold shrink-0">Edit Passport</a>
+    </div>
+
+    <!-- New Post Form -->
+    <form action="/post/new" method="POST" enctype="multipart/form-data" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
+
+        <!-- 1. Image Upload Drop Zone -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-slate-200">Food / Label Photo</label>
+            <div class="relative border-2 border-dashed border-slate-700 hover:border-purple-500/80 rounded-2xl p-6 text-center bg-slate-900/60 transition-colors cursor-pointer group">
+                <input type="file" name="image" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewImage(event)">
+                <div id="uploadPlaceholder" class="space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-slate-800 group-hover:bg-purple-600/20 text-slate-400 group-hover:text-purple-300 flex items-center justify-center mx-auto transition-colors">
+                        <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                    </div>
+                    <div class="text-sm font-medium text-slate-300">
+                        <span class="text-purple-400 font-bold">Click to upload</span> or drag and drop photo
+                    </div>
+                    <p class="text-xs text-slate-500">Supports JPEG, PNG, WEBP (Max 8MB). Longest side auto-scaled to 1280px.</p>
+                </div>
+                <div id="imagePreviewContainer" class="hidden space-y-2">
+                    <img id="imagePreview" src="#" alt="Preview" class="max-h-64 mx-auto rounded-xl object-contain border border-slate-700">
+                    <p class="text-xs text-purple-300 font-semibold">Photo selected. Click again to change.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Image Kind Selector -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-slate-200">Photo Type</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {% for k, label in [('meal', '🍽️ Meal Plate'), ('label', '🏷️ Package Label'), ('both', '✨ Meal + Label'), ('none', '💬 Text Only')] %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="image_kind" value="{{ k }}" class="peer sr-only" {% if k == 'meal' %}checked{% endif %}>
+                    <div class="p-3 rounded-xl border border-slate-800 bg-slate-900 text-center peer-checked:bg-purple-600/20 peer-checked:border-purple-500 peer-checked:text-purple-300 peer-checked:font-bold text-xs text-slate-300 transition-all">
+                        {{ label }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3. Question & Voice Recorder -->
+        <div class="space-y-2">
+            <div class="flex items-center justify-between">
+                <label class="block text-sm font-bold text-slate-200">Your Question</label>
+                <!-- Voice Mic Button -->
+                <button type="button" id="micBtn" onclick="toggleVoiceRecording()" class="inline-flex items-center gap-1.5 bg-purple-900/40 hover:bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                    <i data-lucide="mic" id="micIcon" class="w-4 h-4 text-purple-400"></i>
+                    <span id="micLabel">Record Voice Question</span>
+                </button>
+            </div>
+
+            <!-- Voice Status Strip -->
+            <div id="voiceStatus" class="hidden text-xs text-amber-300 bg-amber-900/30 p-2 rounded-lg border border-amber-500/30 flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
+                <span id="voiceStatusText">Recording... Speak your question.</span>
+            </div>
+
+            <textarea name="question_text" id="questionInput" rows="3" required placeholder="e.g. Is this biscuit okay for my afternoon snack with tea? Does it contain high sugar or palm oil?" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-purple-500"></textarea>
+            <input type="hidden" name="voice_transcript" id="voiceTranscriptInput">
+        </div>
+
+        <!-- 4. Community Selector -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-slate-200">Target Community</label>
+            <select name="community_id" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500">
+                {% for comm in communities %}
+                <option value="{{ comm.id }}">{{ comm.name }} — {{ comm.description }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+            <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="sparkles" class="w-5 h-5"></i> Analyze with Gemma 4 & Post
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewImage(event) {
+        const input = event.target;
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+                document.getElementById('imagePreviewContainer').classList.remove('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Voice Recorder (MediaRecorder -> /api/stt)
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    async function toggleVoiceRecording() {
+        const micBtn = document.getElementById('micBtn');
+        const micIcon = document.getElementById('micIcon');
+        const micLabel = document.getElementById('micLabel');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const voiceStatusText = document.getElementById('voiceStatusText');
+        const questionInput = document.getElementById('questionInput');
+        const voiceTranscriptInput = document.getElementById('voiceTranscriptInput');
+
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    voiceStatusText.innerText = "Transcribing voice with Whisper small (int8 CPU)...";
+
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.webm');
+
+                    try {
+                        const response = await fetch('/api/stt', { method: 'POST', body: formData });
+                        const data = await response.json();
+                        if (data.text) {
+                            questionInput.value = data.text;
+                            voiceTranscriptInput.value = data.text;
+                            voiceStatusText.innerText = "Transcribed language: " + (data.language || 'en');
+                        }
+                    } catch (e) {
+                        voiceStatusText.innerText = "Error transcribing audio. Please type your question.";
+                    }
+                    setTimeout(() => voiceStatus.classList.add('hidden'), 4000);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                micBtn.classList.remove('bg-purple-900/40');
+                micBtn.classList.add('bg-red-900/80', 'text-red-200', 'border-red-500');
+                micLabel.innerText = "Stop Recording";
+                voiceStatus.classList.remove('hidden');
+                voiceStatusText.innerText = "Recording... Speak your question clearly.";
+            } catch (err) {
+                alert("Microphone permission denied or audio device unavailable.");
+            }
+        } else {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            micBtn.classList.add('bg-purple-900/40');
+            micBtn.classList.remove('bg-red-900/80', 'text-red-200', 'border-red-500');
+            micLabel.innerText = "Record Voice Question";
+        }
+    }
+</script>
+{% endblock %}

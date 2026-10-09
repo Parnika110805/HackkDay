@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Verification | URFeast{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="glass-card rounded-2xl p-6 border border-amber-500/30 flex items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Platform Administration
+            </div>
+            <h1 class="text-2xl font-extrabold text-white">Dietitian Credentials Verification</h1>
+            <p class="text-slate-400 text-sm mt-1">
+                Toggle verified dietitian badges and credential notes for clinical accounts.
+            </p>
+        </div>
+    </div>
+
+    <!-- Dietitians List Table -->
+    <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900 text-slate-400 uppercase font-mono border-b border-slate-800">
+                    <tr>
+                        <th class="p-3">User</th>
+                        <th class="p-3">Role</th>
+                        <th class="p-3">Credential Note</th>
+                        <th class="p-3">Verification Status</th>
+                        <th class="p-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for u in users %}
+                    <tr>
+                        <td class="p-3 font-bold text-white flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-full {{ u.avatar_color }} flex items-center justify-center text-xs font-bold">
+                                {{ u.name[0] }}
+                            </div>
+                            <span>{{ u.name }}</span>
+                        </td>
+                        <td class="p-3 capitalize">{{ u.role }}</td>
+                        <td class="p-3 italic text-slate-400">{{ u.credential_note or "N/A" }}</td>
+                        <td class="p-3">
+                            {% if u.is_verified %}
+                            <span class="bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-full font-semibold">
+                                ✓ Verified Dietitian
+                            </span>
+                            {% else %}
+                            <span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-semibold">
+                                Unverified
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-right">
+                            <form action="/admin/verify/toggle" method="POST">
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <button type="submit" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-3 py-1 rounded-lg text-xs transition-colors">
+                                    Toggle Badge
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

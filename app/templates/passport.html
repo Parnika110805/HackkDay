@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Diet Passport | URFeast{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Header Card -->
+    <div class="glass-card rounded-2xl p-6 border border-purple-500/30 flex items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Personal Health Profile
+            </div>
+            <h1 class="text-2xl font-extrabold text-white">Diet Passport</h1>
+            <p class="text-slate-400 text-sm mt-1">
+                Gemma 4 applies these constraints to every food image analysis and human reply audit.
+            </p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
+            <i data-lucide="user-cog" class="w-6 h-6"></i>
+        </div>
+    </div>
+
+    <!-- Passport Form -->
+    <form action="/passport" method="POST" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
+        
+        <!-- User Info Strip -->
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-900 border border-slate-800">
+            <div class="w-10 h-10 rounded-full {{ current_user.avatar_color }} flex items-center justify-center font-bold text-white text-lg">
+                {{ current_user.name[0] }}
+            </div>
+            <div>
+                <div class="font-bold text-white">{{ current_user.name }}</div>
+                <div class="text-xs text-slate-400">{{ current_user.credential_note or "Member" }}</div>
+            </div>
+        </div>
+
+        <!-- 1. Diet Type -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-slate-200">Dietary Style / Preference</label>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {% for dt, label in [('veg', 'Vegetarian'), ('vegan', 'Vegan'), ('egg', 'Eggitarian'), ('non-veg', 'Non-Veg'), ('jain', 'Jain')] %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="diet_type" value="{{ dt }}" class="peer sr-only" {% if passport.diet_type == dt %}checked{% endif %}>
+                    <div class="p-3 rounded-xl border border-slate-800 bg-slate-900 text-center peer-checked:bg-purple-600/20 peer-checked:border-purple-500 peer-checked:text-purple-300 peer-checked:font-bold text-xs text-slate-300 transition-all">
+                        {{ label }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 2. Allergies (Red Badges) -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-red-400 flex items-center gap-1.5">
+                <i data-lucide="alert-octagon" class="w-4 h-4"></i> Severe Allergies (Enforces Red Safety Audit Warning)
+            </label>
+            <p class="text-xs text-slate-400">Select any ingredients that cause allergic reactions or health risk:</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {% for alg in ['peanuts', 'tree nuts', 'dairy', 'gluten', 'soy', 'egg', 'fish', 'shellfish', 'sesame', 'mustard'] %}
+                {% set checked = alg in passport.allergies %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="allergies" value="{{ alg }}" class="peer sr-only" {% if checked %}checked{% endif %}>
+                    <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-900 text-center peer-checked:bg-red-900/40 peer-checked:border-red-500 peer-checked:text-red-200 peer-checked:font-bold text-xs text-slate-300 transition-all flex items-center justify-center gap-1.5">
+                        <span>⚠️ {{ alg|capitalize }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3. Avoid List -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="slash" class="w-4 h-4"></i> Ingredients to Avoid (Preferences)
+            </label>
+            <input type="text" name="avoid_list_str" value="{{ passport.avoid_list|join(', ') }}" placeholder="e.g. palm oil, artificial colors, high fructose corn syrup" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500">
+            <p class="text-xs text-slate-400">Comma-separated list of ingredients you prefer to skip.</p>
+        </div>
+
+        <!-- 4. Health & Fitness Goals -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-emerald-300 flex items-center gap-1.5">
+                <i data-lucide="target" class="w-4 h-4"></i> Dietary Goals
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {% for goal in ['low sugar', 'high protein', 'low sodium', 'weight loss', 'muscle gain', 'clean eating', 'budget friendly'] %}
+                {% set checked = goal in passport.goals %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="goals" value="{{ goal }}" class="peer sr-only" {% if checked %}checked{% endif %}>
+                    <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-900 text-center peer-checked:bg-emerald-900/40 peer-checked:border-emerald-500 peer-checked:text-emerald-200 peer-checked:font-bold text-xs text-slate-300 transition-all flex items-center justify-center gap-1.5">
+                        <span>🎯 {{ goal|title }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 5. Language Preference -->
+        <div class="space-y-2">
+            <label class="block text-sm font-bold text-slate-200">Preferred Language for AI Response & Speech</label>
+            <select name="language" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500">
+                <option value="en" selected>English</option>
+            </select>
+        </div>
+
+        <!-- 6. Health Note & Budget Note -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">Health Conditions Note (Visible only to Dietitians)</label>
+                <textarea name="conditions_note" rows="2" placeholder="e.g. Mild acid reflux, pre-diabetic monitoring" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500">{{ passport.conditions_note or '' }}</textarea>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400">Budget Note</label>
+                <textarea name="budget_note" rows="2" placeholder="e.g. Student mess budget (~₹150/day max)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500">{{ passport.budget_note or '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i> Save Diet Passport
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}
